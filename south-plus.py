@@ -13,7 +13,7 @@ def create_headers(referer=None):
         'accept-encoding': 'gzip, deflate, br, zstd',
         'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
         'cookie': os.getenv('SOUTHPLUSCOOKIE'),  # 从环境变量获取 Cookie
-        'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+        'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',# 换成你抓cookie的浏览器ua
     }
     if referer:
         headers['referer'] = referer  # 如果提供了 referer，则添加到请求头中
@@ -61,6 +61,7 @@ def tasks(url, action, cid, task_type):
 # 主程序执行部分
 if __name__ == "__main__":
     url = 'https://snow-plus.net/plugin.php'
+    # cookie请到你填写的对应站点抓取，抓错无法运行
     
     # 处理日常任务
     if tasks(url, 'job', '15', "申请-日常: "):
