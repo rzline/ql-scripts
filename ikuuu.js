@@ -1,6 +1,6 @@
 import { Env } from './utils';
 
-const $ = new Env('ikuuu机场签到');
+const $ = new Env('ikuuu签到');
 
 async function getIkuuuHost() {
   if (process.env.SSPANEL_HOST) return process.env.SSPANEL_HOST;
