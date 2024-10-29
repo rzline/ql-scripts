@@ -11,7 +11,6 @@ def create_headers(referer=None):
     cookie_value = os.getenv('SOUTHPLUSCOOKIE')
     if cookie_value:
         cookie_value = cookie_value.replace('\n', '').strip()
-        print(f"Formatted Cookie Value: {cookie_value}")  # 打印格式化的 Cookie
     cookies = get_cookies(cookie_value) if cookie_value else {}
     
     headers = {
@@ -51,9 +50,6 @@ def tasks(url, action, cid, task_type):
     # 发送 GET 请求
     response = requests.get(url, params=params, headers=headers)
     response.encoding = 'utf-8'
-    
-    print(f"Response Status Code: {response.status_code}")  # 打印状态码
-    print(f"Response Text: {response.text}")  # 打印响应内容
 
     try:
         values = parse_response(response.text)  # 解析响应内容
