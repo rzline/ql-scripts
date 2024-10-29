@@ -22,7 +22,7 @@ for email, passwd in zip(emails, passwords):
     try:
         print(f'[{email}] 进行登录...')
         response = json.loads(session.post(url=login_url,headers=header,data=data).text)
-        print(response['msg']
+        print(response['msg'])
         result = json.loads(session.post(url=check_url,headers=header).text)
         print(result['msg'])
         content = result['msg']
