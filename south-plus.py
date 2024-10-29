@@ -8,15 +8,22 @@ def get_cookies(cookie_value):
 
 def create_headers(referer=None):
     """构建 HTTP 请求头，包括用户代理和 Cookie"""
+    cookie_value = os.getenv('SOUTHPLUSCOOKIE')
+    if cookie_value:
+        cookie_value = cookie_value.replace('\n', '').strip()
+        print(f"Formatted Cookie Value: {cookie_value}")  # 打印格式化的 Cookie
+    cookies = get_cookies(cookie_value) if cookie_value else {}
+    
     headers = {
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'accept-encoding': 'gzip, deflate, br, zstd',
         'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
-        'cookie': os.getenv('SOUTHPLUSCOOKIE'),  # 从环境变量获取 Cookie
-        'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',# 换成你抓cookie的浏览器ua
+        'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
     }
     if referer:
-        headers['referer'] = referer  # 如果提供了 referer，则添加到请求头中
+        headers['referer'] = referer
+    if cookies:
+        headers['cookie'] = '; '.join([f'{key}={value}' for key, value in cookies.items()])
     return headers
 
 def create_params(action, cid):
@@ -24,8 +31,8 @@ def create_params(action, cid):
     return {
         'H_name': 'tasks',
         'action': 'ajax',
-        'nowtime': str(int(requests.get('https://worldtimeapi.org/api/timezone/Etc/UTC').json()['unixtime'] * 1000)),  # 获取当前时间戳
-        'verify': '5af36471',  # 固定的验证参数，可以考虑动态获取
+        'nowtime': str(int(requests.get('https://worldtimeapi.org/api/timezone/Etc/UTC').json()['unixtime'] * 1000)),
+        'verify': '5af36471',  # 这里可以考虑动态获取
         'actions': action,
         'cid': cid,
     }
@@ -45,23 +52,26 @@ def tasks(url, action, cid, task_type):
     response = requests.get(url, params=params, headers=headers)
     response.encoding = 'utf-8'
     
+    print(f"Response Status Code: {response.status_code}")  # 打印状态码
+    print(f"Response Text: {response.text}")  # 打印响应内容
+
     try:
         values = parse_response(response.text)  # 解析响应内容
         expected_length = 2 if '申请' in task_type else 3  # 根据任务类型确定期望的返回长度
         
-        if len(values) == expected_length:  # 检查返回数据的长度
-            message = values[1]  # 获取消息内容
+        if len(values) == expected_length:
+            message = values[1]
             print(f"{task_type} {message}")  # 打印消息
             return "还没超过" not in message  # 返回是否可以继续任务
         else:
-            raise ValueError("XML格式不正确，请检查COOKIE设置")  # 抛出格式错误
+            raise ValueError("XML格式不正确，请检查COOKIE设置")
     except ET.ParseError:
-        raise ValueError("解析XML时出错，请检查返回的数据格式")  # 捕获解析错误
+        print(f"Failed to parse XML: {response.text}")  # 打印原始响应以便调试
+        raise ValueError("解析XML时出错，请检查返回的数据格式")
 
 # 主程序执行部分
 if __name__ == "__main__":
     url = 'https://snow-plus.net/plugin.php'
-    # cookie请到你填写的对应站点抓取，抓错无法运行
     
     # 处理日常任务
     if tasks(url, 'job', '15', "申请-日常: "):
