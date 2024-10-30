@@ -3,11 +3,9 @@ import os
 import xml.etree.ElementTree as ET
 
 def get_cookies(cookie_value):
-    """将 cookie 字符串解析为字典格式"""
     return {cookie.split('=')[0]: cookie.split('=')[1] for cookie in cookie_value.split('; ')}
 
 def create_headers(referer=None):
-    """构建 HTTP 请求头，包括用户代理和 Cookie"""
     cookie_value = os.getenv('SOUTHPLUSCOOKIE')
     if cookie_value:
         cookie_value = cookie_value.replace('\n', '').strip()
@@ -27,27 +25,33 @@ def create_headers(referer=None):
 
 def create_params(action, cid):
     """创建请求参数"""
+    try:
+        response = requests.get('https://worldtimeapi.org/api/timezone/Etc/UTC')
+        response.raise_for_status()  # 检查请求是否成功
+        nowtime = str(int(response.json()['unixtime'] * 1000))
+    except Exception as e:
+        print(f"获取当前时间失败: {e}")
+        nowtime = str(int(os.time() * 1000))  # 使用本地时间作为备选
+
     return {
         'H_name': 'tasks',
         'action': 'ajax',
-        'nowtime': str(int(requests.get('https://worldtimeapi.org/api/timezone/Etc/UTC').json()['unixtime'] * 1000)),
-        'verify': '5af36471',  # 这里可以考虑动态获取
+        'nowtime': nowtime,
+        'verify': '5af36471',
         'actions': action,
         'cid': cid,
     }
 
 def parse_response(data):
-    """解析 XML 响应，提取所需信息"""
     root = ET.fromstring(data)
     cdata = root.text
-    return cdata.split('\t')  # 按制表符分割提取的数据
+    return cdata.split('\t')
 
 def send_message_to_telegram(message):
-    """发送消息到Telegram Bot"""
-    bot_token = os.getenv('TG_BOT_TOKEN')
-    chat_id = os.getenv('TG_CHAT_ID')
+    bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+    chat_id = os.getenv('TELEGRAM_CHAT_ID')
     
-    if bot_token and chat_id:  # 仅在设置了环境变量时发送消息
+    if bot_token and chat_id:
         url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
         payload = {
             'chat_id': chat_id,
@@ -56,37 +60,32 @@ def send_message_to_telegram(message):
         requests.post(url, json=payload)
 
 def tasks(url, action, cid, task_type):
-    """主任务处理函数，进行任务申请和完成操作"""
     headers = create_headers(url + f'?H_name-tasks-actions-{action}.html.html')
     params = create_params(action, cid)
     
-    # 发送 GET 请求
     response = requests.get(url, params=params, headers=headers)
     response.encoding = 'utf-8'
 
     try:
-        values = parse_response(response.text)  # 解析响应内容
-        expected_length = 2 if '申请' in task_type else 3  # 根据任务类型确定期望的返回长度
+        values = parse_response(response.text)
+        expected_length = 2 if '申请' in task_type else 3
         
         if len(values) == expected_length:
             message = values[1]
-            print(f"{task_type} {message}")  # 打印消息
-            send_message_to_telegram(f"{task_type} {message}")  # 发送到Telegram（如果环境变量已设置）
-            return "还没超过" not in message  # 返回是否可以继续任务
+            print(f"{task_type} {message}")
+            send_message_to_telegram(f"{task_type} {message}")
+            return "还没超过" not in message
         else:
             raise ValueError("XML格式不正确，请检查COOKIE设置")
     except ET.ParseError:
-        print(f"Failed to parse XML: {response.text}")  # 打印原始响应以便调试
+        print(f"Failed to parse XML: {response.text}")
         raise ValueError("解析XML时出错，请检查返回的数据格式")
 
-# 主程序执行部分
 if __name__ == "__main__":
     url = 'https://snow-plus.net/plugin.php'
     
-    # 处理日常任务
     if tasks(url, 'job', '15', "申请-日常: "):
         tasks(url, 'job2', '15', "完成-日常: ")
     
-    # 处理周常任务
     if tasks(url, 'job', '14', "申请-周常: "):
         tasks(url, 'job2', '14', "完成-周常: ")
