@@ -21,8 +21,8 @@ header = {
 
 def send_message_to_telegram(message):
     """发送消息到Telegram Bot"""
-    bot_token = os.getenv('TG_BOT_TOKEN')
-    chat_id = os.getenv('TG_CHAT_ID')
+    bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+    chat_id = os.getenv('TELEGRAM_CHAT_ID')
     
     if bot_token and chat_id:  # 仅在设置了环境变量时发送消息
         url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
@@ -42,11 +42,15 @@ for email, passwd in zip(emails, passwords):
     try:
         print(f'[{email}] 进行登录...')
         response = json.loads(session.post(url=login_url, headers=header, data=data).text)
-        print(response['msg'])
+        
+        # 仅打印提示消息而不打印敏感信息
+        print(f'登录结果: {response["msg"]}')
         
         # 进行签到
         result = json.loads(session.post(url=check_url, headers=header).text)
-        print(result['msg'])
+        
+        # 打印签到结果
+        print(f'签到结果: {result["msg"]}')
         content = result['msg']
         
         # 发送签到结果到Telegram
