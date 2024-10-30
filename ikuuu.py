@@ -21,8 +21,8 @@ header = {
 
 def send_message_to_telegram(message):
     """发送消息到Telegram Bot"""
-    bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
-    chat_id = os.getenv('TELEGRAM_CHAT_ID')
+    bot_token = os.getenv('TG_BOT_TOKEN')
+    chat_id = os.getenv('TG_CHAT_ID')
     
     if bot_token and chat_id:  # 仅在设置了环境变量时发送消息
         url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
