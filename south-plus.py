@@ -42,6 +42,17 @@ def parse_response(data):
     cdata = root.text
     return cdata.split('\t')  # 按制表符分割提取的数据
 
+def send_message_to_telegram(message):
+    """发送消息到Telegram Bot"""
+    bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+    chat_id = os.getenv('TELEGRAM_CHAT_ID')
+    url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
+    payload = {
+        'chat_id': chat_id,
+        'text': message
+    }
+    requests.post(url, json=payload)
+
 def tasks(url, action, cid, task_type):
     """主任务处理函数，进行任务申请和完成操作"""
     headers = create_headers(url + f'?H_name-tasks-actions-{action}.html.html')
@@ -58,6 +69,7 @@ def tasks(url, action, cid, task_type):
         if len(values) == expected_length:
             message = values[1]
             print(f"{task_type} {message}")  # 打印消息
+            send_message_to_telegram(f"{task_type} {message}")  # 发送到Telegram
             return "还没超过" not in message  # 返回是否可以继续任务
         else:
             raise ValueError("XML格式不正确，请检查COOKIE设置")
