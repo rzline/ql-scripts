@@ -42,15 +42,11 @@ for email, passwd in zip(emails, passwords):
     try:
         print(f'[{email}] 进行登录...')
         response = json.loads(session.post(url=login_url, headers=header, data=data).text)
-        
-        # 仅打印提示消息而不打印敏感信息
-        print(f'登录结果: {response["msg"]}')
+        print(response['msg'])
         
         # 进行签到
         result = json.loads(session.post(url=check_url, headers=header).text)
-        
-        # 打印签到结果
-        print(f'签到结果: {result["msg"]}')
+        print(result['msg'])
         content = result['msg']
         
         # 发送签到结果到Telegram
