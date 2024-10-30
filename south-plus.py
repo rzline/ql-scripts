@@ -46,12 +46,14 @@ def send_message_to_telegram(message):
     """发送消息到Telegram Bot"""
     bot_token = os.getenv('TG_BOT_TOKEN')
     chat_id = os.getenv('TG_CHAT_ID')
-    url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
-    payload = {
-        'chat_id': chat_id,
-        'text': message
-    }
-    requests.post(url, json=payload)
+    
+    if bot_token and chat_id:  # 仅在设置了环境变量时发送消息
+        url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
+        payload = {
+            'chat_id': chat_id,
+            'text': message
+        }
+        requests.post(url, json=payload)
 
 def tasks(url, action, cid, task_type):
     """主任务处理函数，进行任务申请和完成操作"""
@@ -69,7 +71,7 @@ def tasks(url, action, cid, task_type):
         if len(values) == expected_length:
             message = values[1]
             print(f"{task_type} {message}")  # 打印消息
-            send_message_to_telegram(f"{task_type} {message}")  # 发送到Telegram
+            send_message_to_telegram(f"{task_type} {message}")  # 发送到Telegram（如果环境变量已设置）
             return "还没超过" not in message  # 返回是否可以继续任务
         else:
             raise ValueError("XML格式不正确，请检查COOKIE设置")
