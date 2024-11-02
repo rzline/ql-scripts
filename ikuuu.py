@@ -10,12 +10,12 @@ emails = os.environ.get('IKUUUEMAIL', '').split(',')
 passwords = os.environ.get('IKUUUPASSWD', '').split(',')
 
 # URL 定义
-login_url = 'https://ikuuu.pw/auth/login'
-check_url = 'https://ikuuu.pw/user/checkin'
+login_url = 'https://ikuuu.one/auth/login'
+check_url = 'https://ikuuu.one/user/checkin'
 
 # 请求头定义
 header = {
-    'origin': 'https://ikuuu.pw',
+    'origin': 'https://ikuuu.one',
     'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36'
 }
 
