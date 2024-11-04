@@ -24,14 +24,30 @@ def create_headers(referer=None):
         headers['cookie'] = '; '.join([f'{key}={value}' for key, value in cookies.items()])
     return headers
 
+def log_to_telegram(message):
+    bot_token = os.getenv('TG_BOT_TOKEN')
+    chat_id = os.getenv('TG_CHAT_ID')
+    
+    if bot_token and chat_id:
+        url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
+        payload = {
+            'chat_id': chat_id,
+            'text': message
+        }
+        response = requests.post(url, json=payload)
+        if response.status_code != 200:
+            print(f"发送日志失败: {response.text}")
+
 def create_params(action, cid):
     """创建请求参数"""
     try:
-        response = requests.get('https://worldtimeapi.org/api/timezone/Etc/UTC')
+        response = requests.get('http://worldtimeapi.org/api/timezone/Etc/UTC')
         response.raise_for_status()  # 检查请求是否成功
         nowtime = str(int(response.json()['unixtime'] * 1000))
-    except Exception as e:
-        print(f"获取当前时间失败: {e}")
+    except requests.RequestException as e:
+        error_message = f"获取当前时间失败: {e}"
+        print(error_message)
+        log_to_telegram(error_message)
         nowtime = str(int(time.time() * 1000))  # 使用本地时间作为备选
 
     return {
@@ -75,16 +91,21 @@ def tasks(url, action, cid, task_type):
         
         if len(values) == expected_length:
             message = values[1]
-            print(f"{task_type} {message}")
-            send_message_to_telegram(f"{task_type} {message}")
+            log_message = f"{task_type} {message}"
+            print(log_message)
+            send_message_to_telegram(log_message)
             return "还没超过" not in message
         else:
             raise ValueError("XML格式不正确，请检查COOKIE设置")
     except ET.ParseError:
-        print(f"解析XML失败: {response.text}")
+        log_message = f"解析XML失败: {response.text}"
+        print(log_message)
+        log_to_telegram(log_message)
         raise ValueError("解析XML时出错，请检查返回的数据格式")
     except requests.RequestException as e:
-        print(f"请求失败: {e}")
+        log_message = f"请求失败: {e}"
+        print(log_message)
+        log_to_telegram(log_message)
 
 if __name__ == "__main__":
     url = 'https://snow-plus.net/plugin.php'
