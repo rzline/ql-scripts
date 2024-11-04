@@ -1,5 +1,6 @@
 import requests
 import os
+import time
 import xml.etree.ElementTree as ET
 
 def get_cookies(cookie_value):
@@ -31,7 +32,7 @@ def create_params(action, cid):
         nowtime = str(int(response.json()['unixtime'] * 1000))
     except Exception as e:
         print(f"获取当前时间失败: {e}")
-        nowtime = str(int(os.time() * 1000))  # 使用本地时间作为备选
+        nowtime = str(int(time.time() * 1000))  # 使用本地时间作为备选
 
     return {
         'H_name': 'tasks',
@@ -57,16 +58,18 @@ def send_message_to_telegram(message):
             'chat_id': chat_id,
             'text': message
         }
-        requests.post(url, json=payload)
+        response = requests.post(url, json=payload)
+        if response.status_code != 200:
+            print(f"发送消息失败: {response.text}")
 
 def tasks(url, action, cid, task_type):
     headers = create_headers(url + f'?H_name-tasks-actions-{action}.html.html')
     params = create_params(action, cid)
     
-    response = requests.get(url, params=params, headers=headers)
-    response.encoding = 'utf-8'
-
     try:
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        response.encoding = 'utf-8'
+
         values = parse_response(response.text)
         expected_length = 2 if '申请' in task_type else 3
         
@@ -78,8 +81,10 @@ def tasks(url, action, cid, task_type):
         else:
             raise ValueError("XML格式不正确，请检查COOKIE设置")
     except ET.ParseError:
-        print(f"Failed to parse XML: {response.text}")
+        print(f"解析XML失败: {response.text}")
         raise ValueError("解析XML时出错，请检查返回的数据格式")
+    except requests.RequestException as e:
+        print(f"请求失败: {e}")
 
 if __name__ == "__main__":
     url = 'https://snow-plus.net/plugin.php'
