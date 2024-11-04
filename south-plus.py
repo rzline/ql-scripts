@@ -24,7 +24,7 @@ def create_headers(referer=None):
         headers['cookie'] = '; '.join([f'{key}={value}' for key, value in cookies.items()])
     return headers
 
-def log_to_telegram(message):
+def log_to_telegram(messages):
     bot_token = os.getenv('TG_BOT_TOKEN')
     chat_id = os.getenv('TG_CHAT_ID')
     
@@ -32,7 +32,7 @@ def log_to_telegram(message):
         url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
         payload = {
             'chat_id': chat_id,
-            'text': message
+            'text': "\n".join(messages)  # 将所有消息合并为一条
         }
         response = requests.post(url, json=payload)
         if response.status_code != 200:
@@ -47,9 +47,7 @@ def create_params(action, cid):
     except requests.RequestException as e:
         error_message = f"获取当前时间失败: {e}"
         print(error_message)
-        log_to_telegram(error_message)
-        nowtime = str(int(time.time() * 1000))  # 使用本地时间作为备选
-
+        return None, error_message  # 返回 None 和错误信息
     return {
         'H_name': 'tasks',
         'action': 'ajax',
@@ -57,31 +55,21 @@ def create_params(action, cid):
         'verify': '5af36471',
         'actions': action,
         'cid': cid,
-    }
+    }, None
 
 def parse_response(data):
     root = ET.fromstring(data)
     cdata = root.text
     return cdata.split('\t')
 
-def send_message_to_telegram(message):
-    bot_token = os.getenv('TG_BOT_TOKEN')
-    chat_id = os.getenv('TG_CHAT_ID')
-    
-    if bot_token and chat_id:
-        url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
-        payload = {
-            'chat_id': chat_id,
-            'text': message
-        }
-        response = requests.post(url, json=payload)
-        if response.status_code != 200:
-            print(f"发送消息失败: {response.text}")
-
-def tasks(url, action, cid, task_type):
+def tasks(url, action, cid, task_type, log_messages):
     headers = create_headers(url + f'?H_name-tasks-actions-{action}.html.html')
-    params = create_params(action, cid)
+    params, error_message = create_params(action, cid)
     
+    if error_message:
+        log_messages.append(error_message)  # 添加错误信息
+        return False
+
     try:
         response = requests.get(url, params=params, headers=headers, timeout=10)
         response.encoding = 'utf-8'
@@ -93,25 +81,30 @@ def tasks(url, action, cid, task_type):
             message = values[1]
             log_message = f"{task_type} {message}"
             print(log_message)
-            send_message_to_telegram(log_message)
+            log_messages.append(log_message)  # 添加成功信息
             return "还没超过" not in message
         else:
             raise ValueError("XML格式不正确，请检查COOKIE设置")
     except ET.ParseError:
         log_message = f"解析XML失败: {response.text}"
         print(log_message)
-        log_to_telegram(log_message)
-        raise ValueError("解析XML时出错，请检查返回的数据格式")
+        log_messages.append(log_message)  # 添加解析失败信息
+        return False
     except requests.RequestException as e:
         log_message = f"请求失败: {e}"
         print(log_message)
-        log_to_telegram(log_message)
+        log_messages.append(log_message)  # 添加请求失败信息
+        return False
 
 if __name__ == "__main__":
     url = 'https://snow-plus.net/plugin.php'
+    log_messages = []
+
+    if tasks(url, 'job', '15', "申请-日常: ", log_messages):
+        tasks(url, 'job2', '15', "完成-日常: ", log_messages)
     
-    if tasks(url, 'job', '15', "申请-日常: "):
-        tasks(url, 'job2', '15', "完成-日常: ")
-    
-    if tasks(url, 'job', '14', "申请-周常: "):
-        tasks(url, 'job2', '14', "完成-周常: ")
+    if tasks(url, 'job', '14', "申请-周常: ", log_messages):
+        tasks(url, 'job2', '14', "完成-周常: ", log_messages)
+
+    if log_messages:
+        log_to_telegram(log_messages)  # 最后发送合并的日志消息
