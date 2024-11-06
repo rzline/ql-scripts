@@ -5,7 +5,7 @@ import os
 # 基本 URL
 BASE_URL = 'https://eatasmr.com'
 # 从环境变量获取 cookie
-COOKIE = os.getenv("cookie_eatASMR")
+COOKIE = os.getenv("eatASMR")
 
 def get_login_url():
     """获取签到 URL 并尝试签到"""
