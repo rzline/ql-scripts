@@ -27,9 +27,10 @@ def create_headers(referer=None):
 def create_params(action, cid):
     """创建请求参数"""
     try:
-        response = requests.get('https://timeapi.io/api/Time/current/zone?timeZone=UTC')
+        # 使用 worldclockapi 替代 timeapi.io
+        response = requests.get('http://worldclockapi.com/api/json/utc/now')
         response.raise_for_status()  # 检查请求是否成功
-        nowtime = str(int(response.json()['epochTime'] * 1000))
+        nowtime = str(int(response.json()['currentFileTime'] / 10000))  # 转换为毫秒
     except Exception as e:
         print(f"获取当前时间失败: {e}")
         nowtime = str(int(time.time() * 1000))  # 使用time.time()作为备选
