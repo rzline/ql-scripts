@@ -1,5 +1,6 @@
 import requests
 import os
+import time
 import xml.etree.ElementTree as ET
 
 def get_cookies(cookie_value):
@@ -26,12 +27,12 @@ def create_headers(referer=None):
 def create_params(action, cid):
     """创建请求参数"""
     try:
-        response = requests.get('https://worldtimeapi.org/api/timezone/Etc/UTC')
+        response = requests.get('https://timeapi.io/api/Time/current/zone?timeZone=UTC')
         response.raise_for_status()  # 检查请求是否成功
-        nowtime = str(int(response.json()['unixtime'] * 1000))
+        nowtime = str(int(response.json()['epochTime'] * 1000))
     except Exception as e:
         print(f"获取当前时间失败: {e}")
-        nowtime = str(int(os.time() * 1000))  # 使用本地时间作为备选
+        nowtime = str(int(time.time() * 1000))  # 使用time.time()作为备选
 
     return {
         'H_name': 'tasks',
