@@ -1,13 +1,9 @@
 import requests
-import json
 import os
 
-# 创建一个请求会话
-session = requests.session()
-
-# 从环境变量获取电子邮件和密码
-emails = os.environ.get('IKUUUEMAIL', '').split(',')
-passwords = os.environ.get('IKUUUPASSWD', '').split(',')
+# 从环境变量中获取账号和密码，使用分号分隔
+credentials = os.getenv('IKUUU', '')
+email, password = credentials.split(';') if ';' in credentials else ('', '')
 
 # URL 定义
 login_url = 'https://ikuuu.one/auth/login'
@@ -20,39 +16,35 @@ header = {
 }
 
 def send_message_to_telegram(message):
-    """发送消息到Telegram Bot"""
-    bot_token = os.getenv('TG_BOT_TOKEN')
-    chat_id = os.getenv('TG_CHAT_ID')
-    
-    if bot_token and chat_id:  # 仅在设置了环境变量时发送消息
-        url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
-        payload = {
-            'chat_id': chat_id,
-            'text': message
-        }
-        requests.post(url, json=payload)
+    """发送消息到 Telegram Bot"""
+    bot_token, chat_id = os.getenv('TG_BOT_TOKEN'), os.getenv('TG_CHAT_ID')
+    if bot_token and chat_id:
+        requests.post(
+            f'https://api.telegram.org/bot{bot_token}/sendMessage',
+            json={'chat_id': chat_id, 'text': message}
+        )
 
-# 逐个处理电子邮件和密码
-for email, passwd in zip(emails, passwords):
-    session = requests.session()
-    data = {
-        'email': email,
-        'passwd': passwd
-    }
+def main():
+    data = {'email': email, 'passwd': password}
     try:
-        print(f'[{email}] 进行登录...')
-        response = json.loads(session.post(url=login_url, headers=header, data=data).text)
-        print(response['msg'])
-        
-        # 进行签到
-        result = json.loads(session.post(url=check_url, headers=header).text)
-        print(result['msg'])
-        content = result['msg']
-        
-        # 发送签到结果到Telegram
-        send_message_to_telegram(f"[{email}] 签到结果: {content}")
-        
+        with requests.Session() as session:
+            # 登录
+            print(f'[{email}] 正在登录...')
+            login_resp = session.post(login_url, headers=header, data=data).json()
+            print(login_resp.get('msg', '登录响应无消息'))
+            
+            # 签到
+            checkin_resp = session.post(check_url, headers=header).json()
+            content = checkin_resp.get('msg', '签到响应无消息')
+            print(content)
+            
+            # 发送签到结果到 Telegram
+            send_message_to_telegram(f"[{email}] 签到结果: {content}")
+            
     except Exception as e:
-        content = '签到失败'
-        print(content)
-        send_message_to_telegram(f"[{email}] 签到失败: {str(e)}")
+        error_message = f"[{email}] 签到失败: {str(e)}"
+        print(error_message)
+        send_message_to_telegram(error_message)
+
+if __name__ == "__main__":
+    main()
