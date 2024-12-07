@@ -20,8 +20,8 @@ HEADERS = {
 }
 
 # 签到 API 和状态 API
-CHECKIN_URL = "https://glados.rocks/api/user/checkin"
-STATUS_URL = "https://glados.rocks/api/user/status"
+CHECKIN_URL = "https://glados.one/api/user/checkin"
+STATUS_URL = "https://glados.one/api/user/status"
 
 # 签到和状态获取逻辑
 def check_in(cookie):
