@@ -4,8 +4,8 @@ import os
 
 # 获取环境变量
 cookies = os.environ.get("GLADOS_COOKIE", "").split("&")
-telegram_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-telegram_chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
+telegram_chat_id = os.environ.get("TG_CHAT_ID", "")
+telegram_bot_token = os.environ.get("TG_BOT_TOKEN", "")
 
 if not cookies or cookies == [""]:
     print("未获取到COOKIE变量")
@@ -13,9 +13,9 @@ if not cookies or cookies == [""]:
 
 # 请求头
 HEADERS = {
-    'referer': 'https://glados.rocks/console/checkin',
-    'origin': 'https://glados.rocks',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',
+    'referer': 'https://glados.one/console/checkin',
+    'origin': 'https://glados.one',
+    'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
     'content-type': 'application/json;charset=UTF-8'
 }
 
