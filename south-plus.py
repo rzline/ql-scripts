@@ -6,6 +6,8 @@ import xml.etree.ElementTree as ET
 def get_cookies():
     cookie_value = os.getenv('SOUTHPLUSCOOKIE', '').strip().replace('\n', '')
     return dict(cookie.split('=', 1) for cookie in cookie_value.split('; ')) if cookie_value else {}
+    telegram_chat_id = os.environ.get("TG_CHAT_ID", "")
+    telegram_bot_token = os.environ.get("TG_BOT_TOKEN", "")
 
 def create_headers(referer=None):
     headers = {
@@ -43,6 +45,22 @@ def tasks(url, action, cid, task_type):
     except Exception as e:
         print(f"{task_type}请求失败: {e}")
         send_message_to_telegram(f"{task_type}失败: {e}")
+
+# Telegram 推送通知
+def telegram_notify(title, content=""):
+    if not telegram_bot_token or not telegram_chat_id:
+        print("未配置 Telegram 推送所需的环境变量")
+        return
+    
+    url = f"https://api.telegram.org/bot{telegram_bot_token}/sendMessage"
+    message = f"{title}\n\n{content}"
+    payload = {"chat_id": telegram_chat_id, "text": message, "parse_mode": "Markdown"}
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        print("Telegram 推送成功")
+    except requests.RequestException as e:
+        print(f"Telegram 推送失败：{e}")
 
 if __name__ == "__main__":
     base_url = 'https://snow-plus.net/plugin.php'
