@@ -41,10 +41,10 @@ def tasks(url, action, cid, task_type):
 
         message = values[1] if len(values) > 1 else "无返回内容"
         print(f"{task_type}: {message}")
-        send_message_to_telegram(f"{task_type}: {message}")
+        telegram_notify(f"{task_type}: {message}")
     except Exception as e:
         print(f"{task_type}请求失败: {e}")
-        send_message_to_telegram(f"{task_type}失败: {e}")
+        telegram_notify(f"{task_type}失败: {e}")
 
 # Telegram 推送通知
 def telegram_notify(title, content=""):
