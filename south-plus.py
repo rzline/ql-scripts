@@ -3,12 +3,13 @@ import os
 import time
 import xml.etree.ElementTree as ET
 
+telegram_chat_id = os.environ.get("TG_CHAT_ID", "")
+telegram_bot_token = os.environ.get("TG_BOT_TOKEN", "")
+
 def get_cookies():
     cookie_value = os.getenv('SOUTHPLUSCOOKIE', '').strip().replace('\n', '')
     return dict(cookie.split('=', 1) for cookie in cookie_value.split('; ')) if cookie_value else {}
-    telegram_chat_id = os.environ.get("TG_CHAT_ID", "")
-    telegram_bot_token = os.environ.get("TG_BOT_TOKEN", "")
-
+    
 def create_headers(referer=None):
     headers = {
         'accept': '*/*',
