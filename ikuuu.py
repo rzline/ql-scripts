@@ -42,7 +42,6 @@ def telegram_notify(title, content=""):
     try:
         response = requests.post(url, json=payload)
         response.raise_for_status()
-        print("Telegram 推送成功")
     except requests.RequestException as e:
         print(f"Telegram 推送失败：{e}")
         
