@@ -3,12 +3,12 @@ import json
 import os
 
 # 获取环境变量
-cookies = os.environ.get("GLADOS_COOKIE", "").split("&")
+cookies = [cookie.strip() for cookie in os.environ.get("GLADOS_COOKIE", "").split("&") if cookie.strip()]
 telegram_chat_id = os.environ.get("TG_CHAT_ID", "")
 telegram_bot_token = os.environ.get("TG_BOT_TOKEN", "")
 
-if not cookies or cookies == [""]:
-    print("未获取到COOKIE变量")
+if not cookies:
+    print("未获取到有效的 COOKIE")
     exit(0)
 
 # 请求头
@@ -53,20 +53,20 @@ def start():
         
         # 提取数据
         email = status_data['data'].get('email', '未知邮箱')
-        left_days = status_data['data'].get('leftDays', '0').split('.')[0]
+        left_days = str(status_data['data'].get('leftDays', '0')).split('.')[0]
         message = checkin_data.get('message', '未知消息')
         
-        log = f"{email}----{message}----剩余({left_days})天"
+        log = f"账号: {email}\n签到结果: {message}\n剩余天数: {left_days} 天\n"
         print(log)
         sendContent += log + "\n"
 
         # 如果 cookie 失效，推送通知
         if message.lower() == 'invalid token':
-            telegram_notify(f"{email}更新cookie")
+            telegram_notify(f"{email} 更新 cookie")
     
     # 全部完成后推送通知
     if sendContent:
-        telegram_notify("VPN签到成功", sendContent)
+        telegram_notify("VPN 签到成功", sendContent)
 
 # Telegram 推送通知
 def telegram_notify(title, content=""):
@@ -75,7 +75,7 @@ def telegram_notify(title, content=""):
         return
     
     url = f"https://api.telegram.org/bot{telegram_bot_token}/sendMessage"
-    message = f"{title}\n\n{content}"
+    message = f"{title}\n\n{content}".replace('_', '\\_')  # 防止 Markdown 解析问题
     payload = {"chat_id": telegram_chat_id, "text": message, "parse_mode": "Markdown"}
     try:
         response = requests.post(url, json=payload)
