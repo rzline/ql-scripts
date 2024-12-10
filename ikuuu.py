@@ -24,11 +24,11 @@ def main():
             checkin_resp = session.post(check_url, headers=header).json()
             message = checkin_resp.get('msg', '签到无响应')
             print(message)
-            send_message_to_telegram(f"[{email}] 签到结果: {message}")
+            telegram_notify(f"[{email}] 签到结果: {message}")
     except Exception as e:
         error_message = f"[{email}] 签到失败: {str(e)}"
         print(error_message)
-        send_message_to_telegram(error_message)
+        telegram_notify(error_message)
         
 # Telegram 推送通知
 def telegram_notify(title, content=""):
