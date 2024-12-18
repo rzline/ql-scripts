@@ -56,6 +56,8 @@ def telegram_notify(title, content=""):
     if not TG_BOT_TOKEN or not TG_CHAT_ID:
         print("未配置 Telegram 推送所需的环境变量")
         return
+        
+    content = content.encode('utf-8').decode('unicode_escape')
     
     url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
     payload = {"chat_id": TG_CHAT_ID, "text": f"{title}\n\n{content}", "parse_mode": "Markdown"}
