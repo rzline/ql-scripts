@@ -2,6 +2,7 @@ import os
 import requests
 import time
 from bs4 import BeautifulSoup
+import json
 
 # 获取账号和密码
 account = os.getenv('SKINACCOUNT')
