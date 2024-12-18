@@ -40,6 +40,10 @@ def task():
     # 签到请求
     sign_response = session.post(endpoint + 'user/sign', headers={'X-CSRF-TOKEN': csrf_token})
 
+    # 提取中文部分
+    response_json = sign_response.json()
+    message = response_json.get("message", "")
+    
     # 打印并发送通知
     print(sign_response.text)
     telegram_notify("签到成功", sign_response.text)
