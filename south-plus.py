@@ -40,8 +40,8 @@ retries = Retry(
 session.mount('https://', HTTPAdapter(max_retries=retries))  # 为 session 添加重试适配器
 
 # Telegram 配置，用于推送消息
-TELEGRAM_CHAT_ID = 'TG_CHAT_ID'  # 从环境变量中获取 Telegram 聊天 ID
-TELEGRAM_BOT_TOKEN = 'TG_BOT_TOKEN'  # 从环境变量中获取 Telegram bot Token
+TELEGRAM_CHAT_ID = os.environ['TG_CHAT_ID']  # 从环境变量中获取 Telegram 聊天 ID
+TELEGRAM_BOT_TOKEN = os.environ['TG_BOT_TOKEN']  # 从环境变量中获取 Telegram bot Token
 
 # Cookie 缓存，用于优化请求性能
 COOKIE_STR = None
