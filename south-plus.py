@@ -7,7 +7,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 # 环境变量配置检查
-required_env_vars = ['SOUTHPLUSCOOKIE', 'TG_CHAT_ID', 'TG_BOT_TOKEN']
+required_env_vars = ['SOUTHPLUS', 'TG_CHAT_ID', 'TG_BOT_TOKEN']
 missing = [var for var in required_env_vars if not os.getenv(var)]
 if missing:
     raise EnvironmentError(f"缺少必需的环境变量: {', '.join(missing)}")

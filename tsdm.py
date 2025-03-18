@@ -7,9 +7,9 @@ import os
 from bs4 import BeautifulSoup
 
 # --- 从环境变量中读取配置变量 ---
-bot_token = os.environ.get("BOT_TOKEN")  # 从环境变量中获取 BOT_TOKEN
-chat_id = os.environ.get("CHAT_ID")      # 从环境变量中获取 CHAT_ID
-cookie = os.environ.get("COOKIE")        # 从环境变量中获取 COOKIE
+bot_token = os.environ.get("TG_BOT_TOKEN")  # 从环境变量中获取 BOT_TOKEN
+chat_id = os.environ.get("TG_CHAT_ID")      # 从环境变量中获取 CHAT_ID
+cookie = os.environ.get("TSDM")        # 从环境变量中获取 COOKIE
 
 # 检查环境变量是否设置
 if not bot_token:

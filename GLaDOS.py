@@ -3,7 +3,7 @@ import json
 import os
 
 # 获取环境变量
-cookies = [cookie.strip() for cookie in os.environ.get("GLADOS_COOKIE", "").split("&") if cookie.strip()]
+cookies = [cookie.strip() for cookie in os.environ.get("GLADOS", "").split("&") if cookie.strip()]
 telegram_chat_id = os.environ.get("TG_CHAT_ID", "")
 telegram_bot_token = os.environ.get("TG_BOT_TOKEN", "")
 
