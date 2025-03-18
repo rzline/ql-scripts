@@ -2,25 +2,11 @@ import re
 import time
 import os
 from bs4 import BeautifulSoup
-import requests # 导入 requests 库
-# import urllib.parse #  urllib.parse 仍然需要，用于 urlencode payload
+import requests
 
-# --- 从环境变量中读取配置变量 --- (保持不变)
-bot_token = os.environ.get("BOT_TOKEN")
-chat_id = os.environ.get("CHAT_ID")
-cookie = os.environ.get("COOKIE")
-
-# 检查环境变量是否设置 (保持不变)
-if not bot_token:
-    print("Error: BOT_TOKEN env var missing.")
-    exit(1)
-if not chat_id:
-    print("Error: CHAT_ID env var missing.")
-    exit(1)
-if not cookie:
-    print("Error: COOKIE env var missing.")
-    exit(1)
-# --- 环境变量读取结束 ---
+bot_token = os.environ.get("TG_BOT_TOKEN")
+chat_id = os.environ.get("TG_CHAT_ID")
+cookie = os.environ.get("TSDM")
 
 # 基础 headers (保持不变)
 base_headers = {
