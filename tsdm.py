@@ -1,30 +1,28 @@
-import httpx
 import re
-import urllib.parse
 import time
 import os
-# import yaml # No longer needed
 from bs4 import BeautifulSoup
+import requests # 导入 requests 库
+# import urllib.parse #  urllib.parse 仍然需要，用于 urlencode payload
 
-# --- 从环境变量中读取配置变量 ---
-bot_token = os.environ.get("TG_BOT_TOKEN")  # 从环境变量中获取 BOT_TOKEN
-chat_id = os.environ.get("TG_CHAT_ID")      # 从环境变量中获取 CHAT_ID
-cookie = os.environ.get("TSDM")        # 从环境变量中获取 COOKIE
+# --- 从环境变量中读取配置变量 --- (保持不变)
+bot_token = os.environ.get("BOT_TOKEN")
+chat_id = os.environ.get("CHAT_ID")
+cookie = os.environ.get("COOKIE")
 
-# 检查环境变量是否设置
+# 检查环境变量是否设置 (保持不变)
 if not bot_token:
-    print("Error: BOT_TOKEN 环境变量未设置。")
-    exit(1) # 退出程序并返回错误代码
+    print("Error: BOT_TOKEN env var missing.")
+    exit(1)
 if not chat_id:
-    print("Error: CHAT_ID 环境变量未设置。")
-    exit(1) # 退出程序并返回错误代码
+    print("Error: CHAT_ID env var missing.")
+    exit(1)
 if not cookie:
-    print("Error: COOKIE 环境变量未设置。")
-    exit(1) # 退出程序并返回错误代码
+    print("Error: COOKIE env var missing.")
+    exit(1)
 # --- 环境变量读取结束 ---
 
-
-# 基础 headers，减少重复 (保持不变)
+# 基础 headers (保持不变)
 base_headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
     "Accept-Encoding": "gzip, deflate, br",
@@ -34,174 +32,154 @@ base_headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
 }
 
-# ---  Telegram 推送函数  ---
+# --- Telegram 推送函数 (修改为使用 requests) ---
 def telegram_push(message, bot_token, chat_id):
-    """发送 Telegram 推送消息"""
+    """发送 Telegram 推送消息 (使用 requests)"""
     if not bot_token or not chat_id:
-        print("Telegram Bot Token 或 Chat ID 未配置，无法发送推送。")
+        print("Telegram config missing, push skipped.")
         return False
-
     api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {
+    payload = { # payload 可以直接使用字典
         "chat_id": chat_id,
         "text": message,
-        "parse_mode": "Markdown" # 可以选择 "Markdown" 或 "HTML" 来格式化消息
+        "parse_mode": "Markdown"
     }
 
     try:
-        response = httpx.post(api_url, json=payload, timeout=10) # 设置超时时间
-        response.raise_for_status() # 检查 HTTP 错误状态码
-        response_json = response.json()
-        if response_json.get("ok"):
-            print("Telegram 推送消息发送成功！")
-            return True
-        else:
-            print(f"Telegram 推送消息发送失败: {response_json}")
-            return False
-    except httpx.HTTPError as e:
-        print(f"Telegram 推送请求失败 (HTTPError): {e}")
+        response = requests.post(api_url, json=payload, timeout=10) # 使用 requests.post, 直接传递 json payload
+        response.raise_for_status() #  requests 自带 raise_for_status 检查 HTTP 错误
+        return response.json().get("ok", False) # requests 自带 json() 方法解析 JSON 响应
+    except requests.exceptions.RequestException as e: # 捕获 requests 的通用异常
+        print(f"Telegram push failed: {e}")
         return False
-    except httpx.TimeoutException as e:
-        print(f"Telegram 推送请求超时: {e}")
-        return False
-    except Exception as e:
-        print(f"Telegram 推送过程中发生错误: {e}")
-        return False
-# --- Telegram 推送函数结束 ---
 
-
-# 函数 (保持不变 -  tsdm_check_in, tsdm_work, get_score, get_formhash)
-def get_formhash(client, cookie):
-    """获取 formhash 值"""
+# 函数 (修改为使用 requests)
+def get_formhash(cookie):
+    """获取 formhash 值 (使用 requests)"""
     headers = base_headers.copy()
     headers['Cookie'] = cookie
     try:
-        response = client.get("https://www.tsdm39.com/forum.php", headers=headers)
-        response.raise_for_status()  # 检查 HTTP 错误
-        match = re.search(r'formhash=(.+?)"', response.text)
-        if match:
-            return match.group(1)
-        else:
-            print("Error: formhash not found.")
-            return None
-    except httpx.HTTPError as e:
-        print(f"HTTP Error while getting formhash: {e}")
-        return None
-    except Exception as e:
-        print(f"Error getting formhash: {e}")
+        response = requests.get("https://www.tsdm39.com/forum.php", headers=headers, timeout=10) # 使用 requests.get
+        response.raise_for_status() # 检查 HTTP 错误
+        match = re.search(r'formhash=(.+?)"', response.text) # requests response 对象可以直接 .text 访问响应内容
+        return match.group(1) if match else None
+    except requests.exceptions.RequestException: # 捕获 requests 异常
+        print("Formhash error")
         return None
 
+def tsdm_check_in(cookie):
+    """天使动漫论坛签到 (使用 requests)"""
+    formhash_value = get_formhash(cookie)
+    if not formhash_value:
+        print("Check-in failed: formhash")
+        return
 
-def tsdm_check_in(cookie, bot_token, chat_id):
-    """天使动漫论坛签到"""
-    headers = base_headers.copy()  # 复制基础 headers
+    payload = { # payload 可以直接使用字典
+        "formhash": formhash_value, # formhash_value 已经是字符串，无需 urlencode
+        "qdxq": "kx",
+        "qdmode": "3",
+        "todaysay": "",
+        "fastreply": "1"
+    }
+
+    headers = base_headers.copy()
     headers["Referer"] = "https://www.tsdm39.com/forum.php"
     headers['Cookie'] = cookie
+    headers['Content-Type'] = 'application/x-www-form-urlencoded' # 保持 content-type
+    headers["Origin"] = 'https://www.tsdm39.com'
 
-    with httpx.Client(headers=headers) as client:
-        formhash_value = get_formhash(client, cookie)
-        if not formhash_value:
-            print("签到失败，无法获取 formhash")
-            return
-
-        encoded_formhash = urllib.parse.quote(formhash_value)
-        checkin_headers = headers.copy()
-        checkin_headers['Content-Type'] = 'application/x-www-form-urlencoded'
-        checkin_headers["Origin"] = 'https://www.tsdm39.com'
-        payload = {"formhash": encoded_formhash, "qdxq": "kx", "qdmode": "3", "todaysay": "", "fastreply": "1"}
-
-        try:
-            response = client.post(
-                "https://www.tsdm39.com/plugin.php?id=dsu_paulsign%3Asign&operation=qiandao&infloat=1&sign_as=1&inajax=1",
-                data=payload, headers=checkin_headers
-            )
-            response.raise_for_status()
-            print("签到完成")
-        except httpx.HTTPError as e:
-            print(f"签到请求失败: {e}")
-        except Exception as e:
-            print(f"签到过程中发生错误: {e}")
+    try:
+        response = requests.post( # 使用 requests.post
+            "https://www.tsdm39.com/plugin.php?id=dsu_paulsign%3Asign&operation=qiandao&infloat=1&sign_as=1&inajax=1",
+            data=payload, # requests 可以直接传递字典作为 data，它会自动 urlencode
+            headers=headers,
+            timeout=10
+        )
+        response.raise_for_status()
+        print("签到完成")
+    except requests.exceptions.RequestException: # 捕获 requests 异常
+        print("Check-in request failed")
 
 
-def tsdm_work(cookie, bot_token, chat_id):
-    """天使动漫论坛打工"""
-    work_headers = { # 工作的 headers 不需要 Referer 等通用信息，简化
+def tsdm_work(cookie):
+    """天使动漫论坛打工 (使用 requests)"""
+    work_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko',
         'cookie': cookie,
         'connection': 'Keep-Alive',
         'x-requested-with': 'XMLHttpRequest',
-        'referer': 'https://www.tsdm39.net/plugin.php?id=np_cliworkdz:work', # 仍然需要 Referer
+        'referer': 'https://www.tsdm39.net/plugin.php?id=np_cliworkdz:work',
         'content-type': 'application/x-www-form-urlencoded'
     }
 
-    with httpx.Client(headers=work_headers) as client:
-        try:
-            response = client.get("https://www.tsdm39.com/plugin.php?id=np_cliworkdz%3Awork&inajax=1")
-            response.raise_for_status()
-            if re.search(r"您需要等待\d+小时\d+分钟\d+秒后即可进行。", response.text):
-                print("打工冷却中，请稍后再试")
-                return
+    try:
+        response_check = requests.get("https://www.tsdm39.com/plugin.php?id=np_cliworkdz%3Awork&inajax=1", headers=work_headers, timeout=10) # requests.get
+        response_check.raise_for_status()
+        if re.search(r"您需要等待\d+小时\d+分钟\d+秒后即可进行。", response_check.text): # .text 访问响应内容
+            print("打工冷却中")
+            return
 
-            print("开始打工...")
-            data = {"act": "clickad"}
-            for _ in range(6): # 使用 _ 表示循环变量不使用
-                work_response = client.post("https://www.tsdm39.com/plugin.php?id=np_cliworkdz:work", headers=work_headers, data=data)
-                work_response.raise_for_status()
-                time.sleep(3)
+        print("开始打工...")
+        data = {"act": "clickad"} # payload 字典
+        for _ in range(6):
+            response_work = requests.post( # requests.post
+                "https://www.tsdm39.com/plugin.php?id=np_cliworkdz:work",
+                headers=work_headers,
+                data=data, # 直接传递字典
+                timeout=10
+            )
+            response_work.raise_for_status()
+            time.sleep(3)
 
-            data = {"act": "getcre"}
-            reward_response = client.post("https://www.tsdm39.com/plugin.php?id=np_cliworkdz:work", headers=work_headers, data=data)
-            reward_response.raise_for_status()
-            print("打工完成:", reward_response.text.strip()) # 简化输出
-        except httpx.HTTPError as e:
-            print(f"打工请求失败: {e}")
-        except Exception as e:
-            print(f"打工过程中发生错误: {e}")
+        data_reward = {"act": "getcre"} # reward payload 字典
+        response_reward = requests.post( # requests.post
+            "https://www.tsdm39.com/plugin.php?id=np_cliworkdz:work",
+            headers=work_headers,
+            data=data_reward, # 直接传递字典
+            timeout=10
+        )
+        response_reward.raise_for_status()
+        reward_content = response_reward.text.strip() # .text 访问响应内容
+        print("打工完成:", reward_content)
+    except requests.exceptions.RequestException: # 捕获 requests 异常
+        print("Work request failed")
 
 
-def get_score(cookie, bot_token, chat_id):
-    """获取天使币积分"""
+def get_score(cookie):
+    """获取天使币积分 (使用 requests)"""
     headers = base_headers.copy()
     headers["Referer"] = "https://www.tsdm39.com/forum.php"
     headers['Cookie'] = cookie
 
-    with httpx.Client(headers=headers) as client:
-        try:
-            response = client.get("https://www.tsdm39.com/home.php?mod=spacecp&ac=credit&showcredit=1", headers=headers)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.text, 'html.parser')
-            ul_element = soup.find('ul', class_='creditl')
-            if ul_element: # 检查 ul_element 是否找到
-                li_element = ul_element.find('li', class_='xi1')
-                if li_element: # 检查 li_element 是否找到
-                    angel_coins = li_element.get_text(strip=True).replace("天使币:", "").strip()
-                    return angel_coins
-                else:
-                    print("Error: 天使币 li 元素未找到")
-                    return "N/A"
-            else:
-                print("Error: creditl ul 元素未找到")
-                return "N/A"
-
-        except httpx.HTTPError as e:
-            print(f"获取积分请求失败: {e}")
+    try:
+        response = requests.get("https://www.tsdm39.com/home.php?mod=spacecp&ac=credit&showcredit=1", headers=headers, timeout=10) # requests.get
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser') # .text 访问响应内容
+        ul_element = soup.find('ul', class_='creditl')
+        if ul_element and (li_element := ul_element.find('li', class_='xi1')):
+            angel_coins = li_element.get_text(strip=True).replace("天使币:", "").strip()
+            return angel_coins
+        else:
+            print("Score elements not found")
             return "N/A"
-        except Exception as e:
-            print(f"获取积分过程中发生错误: {e}")
-            return "N/A"
+    except requests.exceptions.RequestException: # 捕获 requests 异常
+        print("Score request failed")
+        return "N/A"
 
 
 def run():
     """主程序入口"""
     print("开始执行天使动漫每日任务...")
 
-    tsdm_check_in(cookie, bot_token, chat_id) # 直接使用环境变量读取的变量
-    tsdm_work(cookie, bot_token, chat_id)     # 直接使用环境变量读取的变量
-    score = get_score(cookie, bot_token, chat_id) # 直接使用环境变量读取的变量
+    tsdm_check_in(cookie)
+    tsdm_work(cookie)
+    score = get_score(cookie)
     if score != "N/A":
-        message = f"已拥有天使币数量: {score}" # 准备推送消息
-        telegram_push(message, bot_token, chat_id) # 使用新的 Telegram 推送函数
-        print(f"已推送天使币数量: {score}")
+        message = f"已拥有天使币数量: {score}"
+        if telegram_push(message, bot_token, chat_id):
+            print(f"已推送天使币数量: {score}")
+        else:
+            print("推送失败，请检查 Telegram 配置。")
     else:
         print("未能获取到天使币数量，推送可能未包含积分信息。")
     print("每日任务执行完毕。")
