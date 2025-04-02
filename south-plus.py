@@ -20,7 +20,7 @@ logging.basicConfig(
 )
 
 # 全局常量
-BASE_URL = 'https://snow-plus.net/plugin.php'
+BASE_URL = 'https://south-plus.net/plugin.php'
 H_NAME = 'tasks'
 TASKS = [
     {'action': 'job', 'cid': '15', 'task_type': '日常申请'},
@@ -45,7 +45,7 @@ TELEGRAM_BOT_TOKEN = os.environ["TG_BOT_TOKEN"]
 # Cookie缓存优化
 COOKIE_STR = None
 def get_cookies():
-    cookie_value = os.getenv('SOUTHPLUSCOOKIE', '').strip().replace('\n', '')
+    cookie_value = os.getenv('SOUTHPLUS', '').strip().replace('\n', '')
     return dict(cookie.split('=', 1) for cookie in cookie_value.split('; ')) if cookie_value else {}
 
 def get_cookie_str():
